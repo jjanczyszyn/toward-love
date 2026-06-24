@@ -79,6 +79,9 @@ function EventEmbed() {
           className="event-card__img"
           src={LUMA_COVER}
           alt="Toward Love: a dating event for het, monog, family-seeking singles"
+          width={900}
+          height={863}
+          decoding="async"
         />
         <div className="event-card__body">
           <h3 className="event-card__title">
