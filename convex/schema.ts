@@ -1,0 +1,54 @@
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+// Mailing-list signups with the dating questionnaire.
+export default defineSchema({
+  signups: defineTable({
+    email: v.string(),
+    firstName: v.string(),
+    lastName: v.string(),
+
+    // Gender for dating purposes. "other" carries free text in genderOther.
+    gender: v.union(
+      v.literal("male"),
+      v.literal("female"),
+      v.literal("non-binary"),
+      v.literal("other"),
+    ),
+    genderOther: v.optional(v.string()),
+
+    // Sexual orientation. "other" carries a free-text value in orientationOther.
+    orientation: v.union(
+      v.literal("heterosexual"),
+      v.literal("homosexual"),
+      v.literal("bisexual"),
+      v.literal("pansexual"),
+      v.literal("asexual"),
+      v.literal("other"),
+    ),
+    orientationOther: v.optional(v.string()),
+
+    // Relationship agreement preference. "other" carries free text in relationshipOther.
+    relationship: v.union(
+      v.literal("monogamous"),
+      v.literal("non-monogamous"),
+      v.literal("other"),
+    ),
+    relationshipOther: v.optional(v.string()),
+
+    // Kids: two independent questions so any combination is possible
+    // (e.g. "I have kids" + "yes, want more").
+    haveKids: v.union(v.literal("yes"), v.literal("no")),
+    wantKids: v.union(
+      v.literal("yes"),
+      v.literal("no"),
+      v.literal("maybe"),
+      v.literal("open"),
+    ),
+
+    // Optional free-text: special requests or desires for future events.
+    message: v.optional(v.string()),
+
+    createdAt: v.number(),
+  }).index("by_email", ["email"]),
+});
