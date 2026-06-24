@@ -8,6 +8,7 @@ export const add = mutation({
     email: v.string(),
     firstName: v.string(),
     lastName: v.string(),
+    birthYear: v.number(),
     gender: v.union(
       v.literal("male"),
       v.literal("female"),
@@ -38,11 +39,27 @@ export const add = mutation({
       v.literal("open"),
     ),
     message: v.optional(v.string()),
+    // Honeypot: real clients leave this empty. If set, silently drop.
+    hp: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Spam honeypot — pretend success, store nothing.
+    if (args.hp && args.hp.trim()) {
+      return { ok: true, updated: false };
+    }
+
     const email = args.email.trim().toLowerCase();
     if (!EMAIL_RE.test(email)) {
       throw new Error("Please enter a valid email address.");
+    }
+
+    const currentYear = new Date().getFullYear();
+    if (
+      !Number.isInteger(args.birthYear) ||
+      args.birthYear < 1900 ||
+      args.birthYear > currentYear - 18
+    ) {
+      throw new Error("Please enter a valid birth year (you must be 18+).");
     }
 
     const firstName = args.firstName.trim();
@@ -72,6 +89,7 @@ export const add = mutation({
       email,
       firstName,
       lastName,
+      birthYear: args.birthYear,
       gender: args.gender,
       genderOther,
       orientation: args.orientation,

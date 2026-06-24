@@ -7,6 +7,9 @@ export default defineSchema({
     email: v.string(),
     firstName: v.string(),
     lastName: v.string(),
+    // Optional in the schema only to tolerate one pre-existing signup from
+    // before this field existed; the mutation requires it for all new signups.
+    birthYear: v.optional(v.number()),
 
     // Gender for dating purposes. "other" carries free text in genderOther.
     gender: v.union(

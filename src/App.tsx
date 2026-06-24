@@ -1,12 +1,26 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
+import {
+  analyticsConfigured,
+  getConsent,
+  setConsent,
+} from "./analytics";
 
-const LUMA_URL = "https://luma.com/toward-love-a-dating-event-for-het-monog";
-const LUMA_COVER =
-  "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,quality=85,width=900/api-uploads/y6/53e0b007-d86f-4446-9b5f-45146b4d2c6f.jpg";
+// ─── Next event — edit these fields when the event changes ──────────────────
+const EVENT = {
+  title: "Toward Love: a dating event for het, monog, family-seeking singles",
+  date: "Fri, Jun 26 · 6:00–9:00 PM PT",
+  location: "Frontier Tower, San Francisco",
+  url: "https://luma.com/toward-love-a-dating-event-for-het-monog",
+  cover:
+    "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,quality=85,width=900/api-uploads/y6/53e0b007-d86f-4446-9b5f-45146b4d2c6f.jpg",
+};
+// ────────────────────────────────────────────────────────────────────────────
+
 const CREATOR_URL = "https://justinalydia.com";
 const hasBackend = !!import.meta.env.VITE_CONVEX_URL;
+const MAX_BIRTH_YEAR = new Date().getFullYear() - 18; // must be 18+
 
 type Option<T extends string> = { value: T; label: string };
 
@@ -74,22 +88,20 @@ function EventEmbed() {
   return (
     <section className="event" aria-label="Upcoming event">
       <h2 className="event__kicker">The next event</h2>
-      <a className="event-card" href={LUMA_URL} target="_blank" rel="noreferrer">
+      <a className="event-card" href={EVENT.url} target="_blank" rel="noreferrer">
         <img
           className="event-card__img"
-          src={LUMA_COVER}
-          alt="Toward Love: a dating event for het, monog, family-seeking singles"
+          src={EVENT.cover}
+          alt={EVENT.title}
           width={900}
           height={863}
           decoding="async"
         />
         <div className="event-card__body">
-          <h3 className="event-card__title">
-            Toward Love: a dating event for het, monog, family-seeking singles
-          </h3>
+          <h3 className="event-card__title">{EVENT.title}</h3>
           <ul className="event-card__meta">
-            <li>Fri, Jun 26 · 6:00–9:00 PM PT</li>
-            <li>Frontier Tower, San Francisco</li>
+            <li>{EVENT.date}</li>
+            <li>{EVENT.location}</li>
           </ul>
           <span className="event-card__cta">View &amp; register on Luma →</span>
         </div>
@@ -104,6 +116,7 @@ function SignupForm() {
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [birthYear, setBirthYear] = useState("");
   const [gender, setGender] = useState<"" | (typeof GENDERS)[number]["value"]>("");
   const [genderOther, setGenderOther] = useState("");
   const [orientation, setOrientation] = useState<
@@ -119,6 +132,7 @@ function SignupForm() {
     "" | (typeof WANT_KIDS)[number]["value"]
   >("");
   const [message, setMessage] = useState("");
+  const [hp, setHp] = useState(""); // honeypot — real users never fill this
 
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">(
     "idle",
@@ -129,9 +143,20 @@ function SignupForm() {
     e.preventDefault();
     setError("");
 
+    // Honeypot: a bot filled the hidden field. Pretend success, store nothing.
+    if (hp.trim()) {
+      setStatus("done");
+      return;
+    }
+
     if (!email.trim()) return setError("An email is required to join the list.");
     if (!firstName.trim()) return setError("Please enter your first name.");
     if (!lastName.trim()) return setError("Please enter your last name.");
+    const yr = Number(birthYear);
+    if (!birthYear.trim() || !Number.isInteger(yr))
+      return setError("Please enter the year you were born.");
+    if (yr < 1900 || yr > MAX_BIRTH_YEAR)
+      return setError(`Please enter a valid birth year (you must be 18+).`);
     if (!gender) return setError("Please choose a gender.");
     if (gender === "other" && !genderOther.trim())
       return setError("Please describe your gender.");
@@ -150,6 +175,7 @@ function SignupForm() {
         email: email.trim(),
         firstName: firstName.trim(),
         lastName: lastName.trim(),
+        birthYear: Number(birthYear),
         gender,
         genderOther: gender === "other" ? genderOther.trim() : undefined,
         orientation,
@@ -161,6 +187,7 @@ function SignupForm() {
         haveKids,
         wantKids,
         message: message.trim() || undefined,
+        hp: hp || undefined,
       });
       setStatus("done");
     } catch (err) {
@@ -177,9 +204,6 @@ function SignupForm() {
           Thanks{firstName ? `, ${firstName}` : ""}. We'll be in touch as new
           events and matches come together.
         </p>
-        <a className="btn btn--primary" href={LUMA_URL} target="_blank" rel="noreferrer">
-          View the event on Luma →
-        </a>
       </div>
     );
   }
@@ -191,6 +215,20 @@ function SignupForm() {
         Get notified about future events. A few quick questions help us match the
         community to who you are.
       </p>
+
+      {/* Honeypot: hidden from real users; bots that fill it are silently dropped. */}
+      <div className="hp-field" aria-hidden="true">
+        <label>
+          Website
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            value={hp}
+            onChange={(e) => setHp(e.target.value)}
+          />
+        </label>
+      </div>
 
       <label className="field">
         <span>Email *</span>
@@ -225,6 +263,20 @@ function SignupForm() {
           placeholder="Rivera"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
+          required
+        />
+      </label>
+
+      <label className="field">
+        <span>What year were you born? *</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          placeholder="1990"
+          min={1900}
+          max={MAX_BIRTH_YEAR}
+          value={birthYear}
+          onChange={(e) => setBirthYear(e.target.value)}
           required
         />
       </label>
@@ -325,7 +377,97 @@ function SignupForm() {
   );
 }
 
+function ConsentBanner(props: {
+  onAccept: () => void;
+  onDecline: () => void;
+  onPrivacy: () => void;
+}) {
+  return (
+    <div className="consent" role="dialog" aria-label="Analytics consent">
+      <p className="consent__text">
+        We use Google Analytics to understand how the site is used. Okay to enable
+        analytics cookies?{" "}
+        <button type="button" className="linklike" onClick={props.onPrivacy}>
+          Privacy policy
+        </button>
+      </p>
+      <div className="consent__actions">
+        <button type="button" className="btn btn--ghost btn--sm" onClick={props.onDecline}>
+          Decline
+        </button>
+        <button type="button" className="btn btn--primary btn--sm" onClick={props.onAccept}>
+          Accept
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PrivacyModal(props: { onClose: () => void }) {
+  return (
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Privacy policy"
+      onClick={props.onClose}
+    >
+      <div className="modal__panel" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="modal__close" aria-label="Close" onClick={props.onClose}>
+          ×
+        </button>
+        <h2>Privacy policy</h2>
+        <p className="muted">Last updated June 2026.</p>
+
+        <h3>What we collect</h3>
+        <p>
+          When you join the mailing list we store your name, email, year of birth,
+          and the dating preferences you choose to share (gender, sexual
+          orientation, relationship preference, and whether you have or want
+          kids), plus any optional message. Some of this is sensitive personal
+          information, and you provide it voluntarily by submitting the form.
+        </p>
+
+        <h3>Why we collect it</h3>
+        <p>
+          To run the toward.love events and community, to contact you about future
+          events, and to help match the community. We do not sell your data.
+        </p>
+
+        <h3>Where it is stored</h3>
+        <p>Submissions are stored securely with our database provider, Convex.</p>
+
+        <h3>Analytics</h3>
+        <p>
+          Only if you accept analytics cookies, we use Google Analytics to
+          understand site usage. You can decline and the site works exactly the
+          same. We never load analytics without your consent.
+        </p>
+
+        <h3>Your choices</h3>
+        <p>
+          To access, correct, or delete your information, contact the organizers
+          via{" "}
+          <a href={CREATOR_URL} target="_blank" rel="noreferrer">
+            justinalydia.com
+          </a>
+          .
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [showConsent, setShowConsent] = useState(
+    () => analyticsConfigured() && getConsent() === null,
+  );
+  const decide = (value: "granted" | "denied") => {
+    setConsent(value);
+    setShowConsent(false);
+  };
+
   return (
     <main className="wrap">
       <header className="hero">
@@ -366,7 +508,20 @@ export default function App() {
             justinalydia.com
           </a>
         </span>
+        <span className="foot__sep">·</span>
+        <button type="button" className="linklike" onClick={() => setPrivacyOpen(true)}>
+          Privacy
+        </button>
       </footer>
+
+      {showConsent && (
+        <ConsentBanner
+          onAccept={() => decide("granted")}
+          onDecline={() => decide("denied")}
+          onPrivacy={() => setPrivacyOpen(true)}
+        />
+      )}
+      {privacyOpen && <PrivacyModal onClose={() => setPrivacyOpen(false)} />}
     </main>
   );
 }

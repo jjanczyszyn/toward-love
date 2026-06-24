@@ -238,6 +238,7 @@ body {
 }
 .field input[type="text"],
 .field input[type="email"],
+.field input[type="number"],
 .field textarea {
   width: 100%;
   background: var(--chip);
@@ -315,11 +316,119 @@ body {
   margin-top: 8px;
 }
 
+/* Honeypot — visually hidden but present in the DOM for bots. */
+.hp-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .foot {
   text-align: center;
   color: var(--muted);
   font-size: 13px;
   margin-top: 40px;
+}
+.linklike {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+}
+.linklike:hover {
+  text-decoration: underline;
+}
+.btn--sm {
+  padding: 9px 16px;
+  font-size: 14px;
+}
+
+/* Consent banner */
+.consent {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 640px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  z-index: 50;
+}
+.consent__text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+  flex: 1 1 260px;
+}
+.consent__actions {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+/* Privacy modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 4, 9, 0.7);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px 16px;
+  overflow-y: auto;
+  z-index: 60;
+}
+.modal__panel {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 28px 26px;
+  max-width: 560px;
+  width: 100%;
+}
+.modal__panel h2 {
+  margin: 0 0 4px;
+}
+.modal__panel h3 {
+  margin: 20px 0 6px;
+  font-size: 16px;
+}
+.modal__panel p {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  color: var(--muted);
+}
+.modal__panel a {
+  color: var(--accent);
+}
+.modal__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+.modal__close:hover {
+  color: var(--text);
 }
 .foot__sep {
   margin: 0 8px;
