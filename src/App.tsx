@@ -7,11 +7,14 @@ import {
   setConsent,
 } from "./analytics";
 
-// ─── Upcoming events — add/edit/remove entries here (soonest first) ──────────
+// ─── Events — add/edit/remove entries here in any order ──────────────────────
+// `endsAt` is the event's end time (ISO, UTC). Once it passes, the event moves
+// automatically from the "Upcoming" tab to "Past".
 const EVENTS = [
   {
     title: "Toward Love: a dating event for het, monog, family-seeking singles",
     date: "Fri, Jun 26 · 6:00–9:00 PM PT",
+    endsAt: "2026-06-27T04:00:00Z",
     location: "Frontier Tower, San Francisco",
     url: "https://luma.com/toward-love-a-dating-event-for-het-monog",
     cover:
@@ -21,6 +24,7 @@ const EVENTS = [
     title:
       "toward.love: a dating event for ENM, seeking a person to build a life with",
     date: "Thu, Jul 2 · 6:00–9:00 PM PT",
+    endsAt: "2026-07-03T04:00:00Z",
     location: "Frontier Tower, San Francisco",
     url: "https://luma.com/towardlove-a-dating-event-for-enm-seekin",
     cover:
@@ -97,37 +101,104 @@ function ChipGroup<T extends string>(props: {
 
 function EventEmbed() {
   return (
-    <section className="event" aria-label="Upcoming events">
-      <h2 className="event__kicker">
-        {EVENTS.length > 1 ? "Upcoming events" : "The next event"}
-      </h2>
+    <EventList />
+  );
+}
+
+type EventItem = (typeof EVENTS)[number];
+
+function EventCard({ ev, past }: { ev: EventItem; past?: boolean }) {
+  return (
+    <a
+      className={"event-card" + (past ? " event-card--past" : "")}
+      href={ev.url}
+      target="_blank"
+      rel="noreferrer"
+    >
+      <img
+        className="event-card__img"
+        src={ev.cover}
+        alt={ev.title}
+        width={900}
+        height={863}
+        decoding="async"
+        loading={past ? "lazy" : "eager"}
+      />
+      <div className="event-card__body">
+        <h3 className="event-card__title">{ev.title}</h3>
+        <ul className="event-card__meta">
+          <li>{ev.date}</li>
+          <li>{ev.location}</li>
+        </ul>
+        <span className="event-card__cta">
+          {past ? "View on Luma →" : "View & register on Luma →"}
+        </span>
+      </div>
+    </a>
+  );
+}
+
+function EventList() {
+  const now = Date.now();
+  const ends = (e: EventItem) => new Date(e.endsAt).getTime();
+  const upcoming = EVENTS.filter((e) => ends(e) >= now).sort(
+    (a, b) => ends(a) - ends(b),
+  );
+  const past = EVENTS.filter((e) => ends(e) < now).sort(
+    (a, b) => ends(b) - ends(a),
+  );
+
+  const [tab, setTab] = useState<"upcoming" | "past">(
+    upcoming.length === 0 && past.length > 0 ? "past" : "upcoming",
+  );
+
+  // Before any event has happened, keep it simple: just the upcoming list.
+  if (past.length === 0) {
+    return (
+      <section className="event" aria-label="Upcoming events">
+        <h2 className="event__kicker">
+          {upcoming.length > 1 ? "Upcoming events" : "The next event"}
+        </h2>
+        <div className="event__list">
+          {upcoming.map((ev) => (
+            <EventCard key={ev.url} ev={ev} />
+          ))}
+        </div>
+      </section>
+    );
+  }
+
+  const list = tab === "upcoming" ? upcoming : past;
+  return (
+    <section className="event" aria-label="Events">
+      <div className="event__tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "upcoming"}
+          className={"event__tab" + (tab === "upcoming" ? " event__tab--on" : "")}
+          onClick={() => setTab("upcoming")}
+        >
+          Upcoming{upcoming.length ? ` (${upcoming.length})` : ""}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "past"}
+          className={"event__tab" + (tab === "past" ? " event__tab--on" : "")}
+          onClick={() => setTab("past")}
+        >
+          Past ({past.length})
+        </button>
+      </div>
       <div className="event__list">
-        {EVENTS.map((ev) => (
-          <a
-            key={ev.url}
-            className="event-card"
-            href={ev.url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <img
-              className="event-card__img"
-              src={ev.cover}
-              alt={ev.title}
-              width={900}
-              height={863}
-              decoding="async"
-            />
-            <div className="event-card__body">
-              <h3 className="event-card__title">{ev.title}</h3>
-              <ul className="event-card__meta">
-                <li>{ev.date}</li>
-                <li>{ev.location}</li>
-              </ul>
-              <span className="event-card__cta">View &amp; register on Luma →</span>
-            </div>
-          </a>
-        ))}
+        {list.length === 0 ? (
+          <p className="muted event__empty">No upcoming events right now. Check back soon.</p>
+        ) : (
+          list.map((ev) => (
+            <EventCard key={ev.url} ev={ev} past={tab === "past"} />
+          ))
+        )}
       </div>
     </section>
   );
