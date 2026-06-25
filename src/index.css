@@ -82,6 +82,12 @@ body {
   color: var(--muted);
   margin: 0 0 16px;
 }
+.event__list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* Clickable event card: cover image + details, opens the Luma event. */
 .event-card {
   display: block;

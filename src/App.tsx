@@ -7,15 +7,26 @@ import {
   setConsent,
 } from "./analytics";
 
-// ─── Next event — edit these fields when the event changes ──────────────────
-const EVENT = {
-  title: "Toward Love: a dating event for het, monog, family-seeking singles",
-  date: "Fri, Jun 26 · 6:00–9:00 PM PT",
-  location: "Frontier Tower, San Francisco",
-  url: "https://luma.com/toward-love-a-dating-event-for-het-monog",
-  cover:
-    "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,quality=85,width=900/api-uploads/y6/53e0b007-d86f-4446-9b5f-45146b4d2c6f.jpg",
-};
+// ─── Upcoming events — add/edit/remove entries here (soonest first) ──────────
+const EVENTS = [
+  {
+    title: "Toward Love: a dating event for het, monog, family-seeking singles",
+    date: "Fri, Jun 26 · 6:00–9:00 PM PT",
+    location: "Frontier Tower, San Francisco",
+    url: "https://luma.com/toward-love-a-dating-event-for-het-monog",
+    cover:
+      "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,quality=85,width=900/api-uploads/y6/53e0b007-d86f-4446-9b5f-45146b4d2c6f.jpg",
+  },
+  {
+    title:
+      "toward.love: a dating event for ENM, seeking a person to build a life with",
+    date: "Thu, Jul 2 · 6:00–9:00 PM PT",
+    location: "Frontier Tower, San Francisco",
+    url: "https://luma.com/towardlove-a-dating-event-for-enm-seekin",
+    cover:
+      "https://images.lumacdn.com/cdn-cgi/image/format=auto,fit=cover,quality=85,width=900/uploads/0n/178fd9eb-f9f8-43df-931c-a7a91fe44c96.png",
+  },
+];
 // ────────────────────────────────────────────────────────────────────────────
 
 const CREATOR_URL = "https://justinalydia.com";
@@ -86,26 +97,38 @@ function ChipGroup<T extends string>(props: {
 
 function EventEmbed() {
   return (
-    <section className="event" aria-label="Upcoming event">
-      <h2 className="event__kicker">The next event</h2>
-      <a className="event-card" href={EVENT.url} target="_blank" rel="noreferrer">
-        <img
-          className="event-card__img"
-          src={EVENT.cover}
-          alt={EVENT.title}
-          width={900}
-          height={863}
-          decoding="async"
-        />
-        <div className="event-card__body">
-          <h3 className="event-card__title">{EVENT.title}</h3>
-          <ul className="event-card__meta">
-            <li>{EVENT.date}</li>
-            <li>{EVENT.location}</li>
-          </ul>
-          <span className="event-card__cta">View &amp; register on Luma →</span>
-        </div>
-      </a>
+    <section className="event" aria-label="Upcoming events">
+      <h2 className="event__kicker">
+        {EVENTS.length > 1 ? "Upcoming events" : "The next event"}
+      </h2>
+      <div className="event__list">
+        {EVENTS.map((ev) => (
+          <a
+            key={ev.url}
+            className="event-card"
+            href={ev.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <img
+              className="event-card__img"
+              src={ev.cover}
+              alt={ev.title}
+              width={900}
+              height={863}
+              decoding="async"
+            />
+            <div className="event-card__body">
+              <h3 className="event-card__title">{ev.title}</h3>
+              <ul className="event-card__meta">
+                <li>{ev.date}</li>
+                <li>{ev.location}</li>
+              </ul>
+              <span className="event-card__cta">View &amp; register on Luma →</span>
+            </div>
+          </a>
+        ))}
+      </div>
     </section>
   );
 }
