@@ -378,6 +378,26 @@ body {
   font-size: 13px;
   margin-top: 40px;
 }
+.foot__invite {
+  font-size: 15px;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.foot__invite a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.foot__invite a:hover {
+  text-decoration: underline;
+}
+.foot__meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+}
 .linklike {
   background: none;
   border: none;

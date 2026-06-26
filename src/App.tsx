@@ -34,6 +34,13 @@ const EVENTS = [
 // ────────────────────────────────────────────────────────────────────────────
 
 const CREATOR_URL = "https://justinalydia.com";
+const CONTACT_EMAIL = "hello@toward.love";
+// Open Gmail's compose window in the browser instead of the system mail app.
+const GMAIL_COMPOSE =
+  "https://mail.google.com/mail/?view=cm&fs=1&to=" +
+  encodeURIComponent(CONTACT_EMAIL) +
+  "&su=" +
+  encodeURIComponent("Thoughts, desires, co-creation");
 const hasBackend = !!import.meta.env.VITE_CONVEX_URL;
 const MAX_BIRTH_YEAR = new Date().getFullYear() - 18; // must be 18+
 
@@ -594,18 +601,26 @@ export default function App() {
       </div>
 
       <footer className="foot">
-        <span>toward.love</span>
-        <span className="foot__sep">·</span>
-        <span>
-          Created by{" "}
-          <a href={CREATOR_URL} target="_blank" rel="noreferrer">
-            justinalydia.com
+        <p className="foot__invite">
+          Thoughts, desires, or want to co-create?{" "}
+          <a href={GMAIL_COMPOSE} target="_blank" rel="noreferrer">
+            Email {CONTACT_EMAIL}
           </a>
-        </span>
-        <span className="foot__sep">·</span>
-        <button type="button" className="linklike" onClick={() => setPrivacyOpen(true)}>
-          Privacy
-        </button>
+        </p>
+        <div className="foot__meta">
+          <span>toward.love</span>
+          <span className="foot__sep">·</span>
+          <span>
+            Created by{" "}
+            <a href={CREATOR_URL} target="_blank" rel="noreferrer">
+              justinalydia.com
+            </a>
+          </span>
+          <span className="foot__sep">·</span>
+          <button type="button" className="linklike" onClick={() => setPrivacyOpen(true)}>
+            Privacy
+          </button>
+        </div>
       </footer>
 
       {showConsent && (
