@@ -190,6 +190,13 @@ body {
   background-clip: text;
   color: transparent;
 }
+.mark__sm {
+  font-size: 0.5em;
+  font-weight: 600;
+  margin-left: 0.15em;
+  vertical-align: super;
+  color: var(--text);
+}
 
 .hero h1 {
   font-size: clamp(32px, 7vw, 46px);

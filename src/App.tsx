@@ -572,7 +572,7 @@ export default function App() {
   return (
     <main className="wrap">
       <header className="hero">
-        <div className="mark">toward<span>.love</span></div>
+        <div className="mark">toward<span>.love</span><sup className="mark__sm">℠</sup></div>
         <h1>Intentional dating, toward lasting partnership.</h1>
         <p className="lede">
           A space for people serious about a lasting partnership, in an
