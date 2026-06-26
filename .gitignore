@@ -12,3 +12,7 @@ dist-ssr
 
 # Convex
 .convex
+
+# Private: event scripts & derived content — never commit (repo is public)
+content/
+.env.scripts.local
