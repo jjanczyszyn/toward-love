@@ -26,7 +26,9 @@ Browser ── https://script.toward.love (S3 + CloudFront + ACM TLS)
 - **Script content** is embedded in the **Lambda deployment package** (private) and
   returned only to an authenticated session. It is **never** in this public repo nor
   in the web bundle (the markdown lives only in gitignored `content/scripts/*.md`).
-- **Email** (login codes + the PDF) uses **SES** — no Resend, no passwords.
+- **Email** (login codes + the PDF) is sent through your existing AWS **SES** setup
+  (the verified `toward.love` identity + DKIM from your custom-domain-email project).
+  No third-party email service, no passwords.
 
 ## AWS resources (account 038979314594, us-east-1)
 

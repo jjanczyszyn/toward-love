@@ -148,8 +148,8 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
             >
               {busy ? "Verifying…" : "Enter"}
             </button>
-            <button className="linklike resend" disabled={busy} onClick={send}>
-              Resend code
+            <button className="linklike resend-code" disabled={busy} onClick={send}>
+              Send a new code
             </button>
           </>
         )}
