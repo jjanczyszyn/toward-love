@@ -54,40 +54,4 @@ export default defineSchema({
 
     createdAt: v.number(),
   }).index("by_email", ["email"]),
-
-  // ── script.toward.love : private facilitation scripts (NEVER in the public repo) ──
-  // The script content lives only here in the database, returned only to an
-  // authenticated session. Seeded from local gitignored files via scripts/seed-scripts.mjs.
-  scriptDocs: defineTable({
-    slug: v.string(), // e.g. "01-simmer"
-    order: v.number(),
-    title: v.string(), // e.g. 'Simmer'
-    theme: v.string(),
-    tone: v.optional(v.string()),
-    // Ordered sections, each independently selectable in the picker UI.
-    sections: v.array(
-      v.object({
-        id: v.string(), // stable section id, e.g. "opening-circle"
-        title: v.string(),
-        duration: v.optional(v.string()), // "10:00"
-        markdown: v.string(), // the section body (facilitator script)
-      }),
-    ),
-    updatedAt: v.number(),
-  }).index("by_slug", ["slug"]),
-
-  // Login codes emailed to the single allowed address (hello@toward.love).
-  loginCodes: defineTable({
-    email: v.string(),
-    codeHash: v.string(),
-    expiresAt: v.number(),
-    consumed: v.boolean(),
-  }).index("by_email", ["email"]),
-
-  // Active browser sessions (opaque bearer token kept in localStorage).
-  sessions: defineTable({
-    token: v.string(),
-    email: v.string(),
-    expiresAt: v.number(),
-  }).index("by_token", ["token"]),
 });

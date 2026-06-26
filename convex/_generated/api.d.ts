@@ -8,9 +8,6 @@
  * @module
  */
 
-import type * as scriptsAuth from "../scriptsAuth.js";
-import type * as scriptsContent from "../scriptsContent.js";
-import type * as scriptsEmail from "../scriptsEmail.js";
 import type * as signups from "../signups.js";
 
 import type {
@@ -20,9 +17,6 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  scriptsAuth: typeof scriptsAuth;
-  scriptsContent: typeof scriptsContent;
-  scriptsEmail: typeof scriptsEmail;
   signups: typeof signups;
 }>;
 

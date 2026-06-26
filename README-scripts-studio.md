@@ -1,95 +1,87 @@
 # script.toward.love — the private Script Studio
 
 A login-gated tool to read the 10 facilitation scripts, mix-and-match their
-sections into one final script, and download/email it as a PDF.
+sections into one final script, and download or email it as a PDF.
 
-**The script content never lives in this (public) repo.** It is authored in the
-gitignored `content/scripts/*.md` files and stored only in the Convex database,
-returned exclusively to an authenticated session. The web bundle ships only the
-login gate + UI shell — no scripts.
+**Live:** https://script.toward.love (login by email code to `hello@toward.love`).
 
-## What's where
+## Architecture (all AWS, plus GitHub Pages for static hosting)
+
+```
+Browser ── https://script.toward.love (GitHub Pages: jjanczyszyn/toward-love-script)
+   │         static login gate + UI only — NO script content in the bundle
+   │
+   └── POST ─► API Gateway HTTP API ─► Lambda  (toward-love-scripts)
+                                         │  • request_code  → SES emails a 6-digit code to hello@toward.love
+                                         │  • verify_code   → issues a 30-day session token (DynamoDB)
+                                         │  • list_scripts  → returns the 10 scripts (only with a valid token)
+                                         │  • email_pdf     → SES emails the finalized PDF
+                                         ▼
+                              DynamoDB  toward-love-scripts-auth  (codes + sessions, TTL)
+```
+
+- **Login:** email code only. The only accepted address is `hello@toward.love`.
+  The code is sent there via **SES**, and your existing `multi-domain-email-forwarder`
+  forwards `hello@toward.love` to your real inbox — so the code lands with you.
+- **Script content** is embedded in the **Lambda deployment package** (private) and
+  returned only to an authenticated session. It is **never** in this public repo nor
+  in the web bundle (the markdown lives only in gitignored `content/scripts/*.md`).
+- **Email** (login codes + the PDF) uses **SES** — no Resend, no passwords.
+
+## AWS resources (account 038979314594, us-east-1)
+
+| Resource | Name |
+|---|---|
+| Lambda | `toward-love-scripts` |
+| API Gateway HTTP API | `toward-love-scripts` → `https://y3jayphrrf.execute-api.us-east-1.amazonaws.com/` |
+| DynamoDB | `toward-love-scripts-auth` (PK `pk`, TTL `ttl`) |
+| IAM role | `toward-love-scripts-lambda` (SES send, DynamoDB RW, logs) |
+| DNS (Route53 `toward.love`) | `script.toward.love` CNAME → `jjanczyszyn.github.io` |
+| Static host | GitHub Pages repo `jjanczyszyn/toward-love-script` (CNAME `script.toward.love`) |
+
+Lambda env: `ALLOWED_EMAIL=hello@toward.love`, `FROM_EMAIL=toward.love <no-reply@toward.love>`,
+`PDF_TO=justynajanczyszyn@gmail.com`, `TABLE`, `SALT`.
+
+## Repo layout
 
 | Piece | Path |
 |---|---|
-| The 10 scripts (private, gitignored) | `content/scripts/*.md` |
-| Authoring brief | `content/SPEC.md` |
-| Page entry | `scripts.html` → `src/scripts/main.tsx` |
-| UI (login, compose, browse, PDF) | `src/scripts/ScriptsApp.tsx`, `src/scripts/pdf.ts`, `src/scripts/scripts.css` |
-| Auth backend | `convex/scriptsAuth.ts` |
-| Content query + admin seed | `convex/scriptsContent.ts` |
-| Email-the-PDF action | `convex/scriptsEmail.ts` |
-| DB tables | `convex/schema.ts` (`scriptDocs`, `sessions`, `loginCodes`) |
-| Seeder (reads local files → Convex) | `scripts/seed-scripts.mjs` (`npm run seed:scripts`) |
+| The 10 scripts (private, gitignored) | `content/scripts/*.md` (+ `content/SPEC.md`) |
+| Studio page | `scripts.html` → `src/scripts/main.tsx` |
+| UI (login, compose, browse, PDF) | `src/scripts/{ScriptsApp.tsx,api.ts,pdf.ts,scripts.css}` |
+| Studio-only build | `vite.studio.config.ts` → `dist-studio/` |
+| Lambda backend | `infra/lambda/index.mjs` (+ generated `scripts.json`, gitignored) |
+| Build scripts.json from md | `scripts/build-scripts-json.mjs` |
+| Deploy frontend | `scripts/deploy-studio.sh` (`npm run deploy:studio`) |
+| Deploy backend | `scripts/deploy-lambda.sh` (`npm run deploy:lambda`) |
 
-## Run it locally (fully working today)
+## Editing scripts / redeploying
+
+```sh
+# 1) edit content/scripts/*.md   (keep the "## [id] Title — MM:SS" headers intact)
+npm run deploy:lambda     # rebuild scripts.json + push the Lambda (content update)
+npm run deploy:studio     # rebuild + push the frontend to script.toward.love (UI update)
+```
+
+`deploy:lambda` regenerates `infra/lambda/scripts.json` from the markdown and updates
+the function code. `deploy:studio` builds the gate/UI and pushes to the Pages repo.
+
+## Run locally
 
 ```sh
 npm install
-npm run dev:all          # Vite + local Convex
-npx convex env set SCRIPTS_PASSWORD "choose-a-password"   # one time
-npm run seed:scripts     # loads content/scripts/*.md into Convex
-# open http://localhost:5173/scripts.html
+VITE_SCRIPTS_API="https://y3jayphrrf.execute-api.us-east-1.amazonaws.com/" \
+  npm run build:studio && npx vite preview --config vite.studio.config.ts
+# open the printed URL → /scripts.html
 ```
 
-Sign in with email **hello@toward.love** + that password. (The current local
-deployment already has `SCRIPTS_PASSWORD=toward-love-2026` set and the scripts
-seeded.) Pick a version per section, then **Download PDF** or **Email the PDF to
-me**.
+## Notes / security
 
-## Login: how it works
-
-Two ways in, both enforced **server-side** (content is never returned without a
-valid session token):
-
-1. **Emailed code** — "Email me a login code" sends a 6-digit code to
-   `hello@toward.love` (requires `RESEND_API_KEY`, below). Enter it to sign in.
-2. **Password** — `SCRIPTS_PASSWORD` (a Convex env var). Works with no email setup,
-   so you're never locked out.
-
-Only `hello@toward.love` is ever accepted. Sessions last 30 days (localStorage).
-
-## Environment variables (set on the Convex deployment)
-
-| Var | Purpose | Required? |
-|---|---|---|
-| `SCRIPTS_PASSWORD` | Master password + seed auth | Yes |
-| `RESEND_API_KEY` | Send login codes + email the PDF (https://resend.com) | Optional |
-| `SCRIPTS_FROM_EMAIL` | From address, e.g. `toward.love <hello@toward.love>` | Optional |
-| `SCRIPTS_PDF_TO` | Where "Email the PDF" sends (default `justynajanczyszyn@gmail.com`) | Optional |
-
-Set with `npx convex env set NAME value` (add `--prod` for production).
-Until `RESEND_API_KEY` is set, "Email the PDF" gracefully **downloads** instead.
-
-## Go live (the steps that need your credentials / DNS)
-
-1. **Push the backend to production Convex** (needs the prod deploy key, already a
-   GitHub secret): merging to `main` runs `.github/workflows/deploy.yml`, which does
-   `npx convex deploy` + builds the site. Or run `npm run deploy:convex` locally if
-   you have the key.
-2. **Set prod env**: `npx convex env set SCRIPTS_PASSWORD "…" --prod` (and the
-   Resend vars if you want emailed codes / emailed PDFs).
-3. **Seed prod**: `VITE_CONVEX_URL=<prod-url> SCRIPTS_PASSWORD=<same> npm run seed:scripts`.
-4. **Serve the subdomain `script.toward.love`.** GitHub Pages serves one custom
-   domain per repo (this repo's is `toward.love`), so the studio is reachable at
-   **`toward.love/scripts.html`** as soon as `main` deploys. To use the
-   `script.toward.love` subdomain, pick one:
-   - **Redirect (simplest):** at your DNS/registrar (or Cloudflare), add a CNAME
-     `script → jjanczyszyn.github.io` and a redirect rule
-     `script.toward.love/*` → `https://toward.love/scripts.html`.
-   - **Dedicated Pages site:** create a second repo whose Pages `CNAME` is
-     `script.toward.love`, publish the same `dist/scripts.html` as its `index.html`,
-     and add the `script` CNAME DNS record.
-
-## Re-generating / editing scripts
-
-Edit the files in `content/scripts/`, then `npm run seed:scripts` (re-run with the
-prod URL to update production). The seeder replaces the whole library each run.
-Section boundaries are the `## [id] Title — MM:SS` headers — keep those intact.
-
-## Security notes
-
-- Repo is **public**; scripts/transcripts are **gitignored** and live only in
-  Convex (private). Never commit `content/`.
-- The page is `noindex,nofollow`. Content requires a session token to fetch.
-- The `seedReplace` mutation requires `SCRIPTS_PASSWORD`.
+- This repo is **public**. Scripts/transcripts are **gitignored**; they live only in
+  the Lambda package (private) and your local `content/`. Never commit `content/`.
+- The page is `noindex,nofollow`; script content requires a session token.
+- HTTPS: GitHub provisions the TLS cert for `script.toward.love` automatically a few
+  minutes after the DNS record resolves. If "Enforce HTTPS" isn't on yet in the
+  `toward-love-script` repo's Pages settings, toggle it once the cert is ready.
+- The API Gateway endpoint is public but only ever sends codes to `hello@toward.love`
+  and returns content to a valid session.

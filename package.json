@@ -10,7 +10,10 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "deploy:convex": "convex deploy",
-    "seed:scripts": "node scripts/seed-scripts.mjs"
+    "build:studio": "vite build --config vite.studio.config.ts",
+    "build:scripts-json": "node scripts/build-scripts-json.mjs",
+    "deploy:studio": "bash scripts/deploy-studio.sh",
+    "deploy:lambda": "bash scripts/deploy-lambda.sh"
   },
   "dependencies": {
     "convex": "^1.17.0",

@@ -1,20 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import { useAction, useMutation, useQuery } from "convex/react";
 import { marked } from "marked";
-import { api } from "../../convex/_generated/api";
+import {
+  apiConfigured,
+  emailPdf,
+  listScripts,
+  requestCode,
+  verifyCode,
+  type ScriptDoc,
+} from "./api";
 import { buildPdf, pdfBase64, type Section } from "./pdf";
 
 const TOKEN_KEY = "tl_scripts_token";
 const SEL_KEY = "tl_scripts_selection";
-
-type ScriptDoc = {
-  slug: string;
-  order: number;
-  title: string;
-  theme: string;
-  tone: string;
-  sections: { id: string; title: string; duration?: string; markdown: string }[];
-};
 
 marked.setOptions({ breaks: true });
 const md = (s: string) => ({ __html: marked.parse(s) as string });
@@ -22,14 +19,29 @@ const md = (s: string) => ({ __html: marked.parse(s) as string });
 // ─────────────────────────────────────────────────────────────────────────────
 export default function ScriptsApp() {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY) || "");
-  const session = useQuery(api.scriptsAuth.validate, token ? { token } : "skip");
+  const [scripts, setScripts] = useState<ScriptDoc[] | null>(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (token && session === null) {
-      localStorage.removeItem(TOKEN_KEY);
-      setToken("");
+    let alive = true;
+    if (!token) {
+      setChecked(true);
+      return;
     }
-  }, [token, session]);
+    setChecked(false);
+    listScripts(token)
+      .then((r) => alive && (setScripts(r.scripts), setChecked(true)))
+      .catch(() => {
+        if (!alive) return;
+        localStorage.removeItem(TOKEN_KEY);
+        setToken("");
+        setScripts(null);
+        setChecked(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [token]);
 
   const onAuthed = (t: string) => {
     localStorage.setItem(TOKEN_KEY, t);
@@ -38,36 +50,37 @@ export default function ScriptsApp() {
   const onLogout = () => {
     localStorage.removeItem(TOKEN_KEY);
     setToken("");
+    setScripts(null);
   };
 
+  if (!apiConfigured)
+    return (
+      <div className="wrap centered muted">
+        Studio API not configured (set <code>VITE_SCRIPTS_API</code> at build).
+      </div>
+    );
   if (!token) return <LoginGate onAuthed={onAuthed} />;
-  if (session === undefined)
-    return <div className="wrap centered muted">Unlocking…</div>;
-  if (session === null) return <LoginGate onAuthed={onAuthed} />;
-  return <Studio token={token} onLogout={onLogout} />;
+  if (!checked || !scripts) return <div className="wrap centered muted">Unlocking…</div>;
+  return <Studio token={token} scripts={scripts} onLogout={onLogout} />;
 }
 
-// ── Login ─────────────────────────────────────────────────────────────────────
+// ── Login: email code only (hello@toward.love) ────────────────────────────────
 function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
-  const requestCode = useAction(api.scriptsAuth.requestCode);
-  const verifyCode = useMutation(api.scriptsAuth.verifyCode);
-  const loginPw = useMutation(api.scriptsAuth.loginWithPassword);
-
   const [email, setEmail] = useState("hello@toward.love");
   const [code, setCode] = useState("");
-  const [password, setPassword] = useState("");
   const [sent, setSent] = useState(false);
-  const [emailedHint, setEmailedHint] = useState<null | boolean>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const send = async () => {
     setError("");
+    setInfo("");
     setBusy(true);
     try {
-      const r = await requestCode({ email });
+      await requestCode(email);
       setSent(true);
-      setEmailedHint(r.emailed);
+      setInfo(`If ${email.trim().toLowerCase()} is the authorized address, a 6-digit code is on its way to that inbox.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not send the code.");
     } finally {
@@ -79,23 +92,10 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
     setError("");
     setBusy(true);
     try {
-      const r = await verifyCode({ email, code });
+      const r = await verifyCode(email, code);
       onAuthed(r.token);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Invalid code.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const signInPw = async () => {
-    setError("");
-    setBusy(true);
-    try {
-      const r = await loginPw({ email, password });
-      onAuthed(r.token);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Wrong email or password.");
     } finally {
       setBusy(false);
     }
@@ -108,7 +108,7 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
       </div>
       <h1 className="login-title">Script studio</h1>
       <p className="muted login-sub">
-        Private. Sign in to read, mix, and finalize the event scripts.
+        Private. A login code is emailed to the authorized address.
       </p>
 
       <div className="card login-card">
@@ -119,6 +119,7 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             autoComplete="email"
+            disabled={sent}
           />
         </label>
 
@@ -128,11 +129,7 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
           </button>
         ) : (
           <>
-            <p className="muted small">
-              {emailedHint
-                ? `A 6-digit code was sent to ${email}. Check that inbox.`
-                : "Code generated. (Email delivery isn't configured on this deployment yet — use the password below, or set RESEND_API_KEY to receive codes.)"}
-            </p>
+            {info && <p className="muted small">{info}</p>}
             <label className="field">
               <span>Login code</span>
               <input
@@ -140,6 +137,8 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="123456"
+                onKeyDown={(e) => e.key === "Enter" && code.length >= 4 && verify()}
+                autoFocus
               />
             </label>
             <button
@@ -154,29 +153,6 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
             </button>
           </>
         )}
-
-        <div className="login-divider">
-          <span>or</span>
-        </div>
-
-        <label className="field">
-          <span>Password</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            onKeyDown={(e) => e.key === "Enter" && password && signInPw()}
-          />
-        </label>
-        <button
-          className="btn btn--ghost btn--full"
-          disabled={busy || !password}
-          onClick={signInPw}
-        >
-          Sign in with password
-        </button>
-
         {error && <p className="error">{error}</p>}
       </div>
     </main>
@@ -184,32 +160,32 @@ function LoginGate({ onAuthed }: { onAuthed: (t: string) => void }) {
 }
 
 // ── Studio ────────────────────────────────────────────────────────────────────
-function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
-  const scripts = useQuery(api.scriptsContent.list, { token }) as
-    | ScriptDoc[]
-    | undefined;
-  const sendPdf = useAction(api.scriptsEmail.sendPdf);
+function Studio({
+  token,
+  scripts,
+  onLogout,
+}: {
+  token: string;
+  scripts: ScriptDoc[];
+  onLogout: () => void;
+}) {
+  const sectionOrder = useMemo(
+    () =>
+      scripts[0].sections.map((s) => ({
+        id: s.id,
+        title: s.title,
+        duration: s.duration,
+      })),
+    [scripts],
+  );
 
-  // Canonical section order + labels from the first script (all are consistent).
-  const sectionOrder = useMemo(() => {
-    if (!scripts || !scripts.length) return [];
-    return scripts[0].sections.map((s) => ({
-      id: s.id,
-      title: s.title,
-      duration: s.duration,
-    }));
-  }, [scripts]);
-
-  // selection: sectionId -> chosen script slug
   const [selection, setSelection] = useState<Record<string, string>>({});
   const [view, setView] = useState<"compose" | "browse">("compose");
-  const [browseSlug, setBrowseSlug] = useState<string>("");
+  const [browseSlug, setBrowseSlug] = useState<string>(scripts[0].slug);
   const [openSection, setOpenSection] = useState<string>("");
   const [emailState, setEmailState] = useState<string>("");
 
-  // Initialize selection (from storage, else default everything to script #1).
   useEffect(() => {
-    if (!scripts || !scripts.length) return;
     const stored = localStorage.getItem(SEL_KEY);
     const valid = (sel: Record<string, string>) =>
       Object.values(sel).every((slug) => scripts.some((s) => s.slug === slug));
@@ -234,15 +210,6 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
       localStorage.setItem(SEL_KEY, JSON.stringify(selection));
   }, [selection]);
 
-  if (scripts === undefined)
-    return <div className="wrap centered muted">Loading scripts…</div>;
-  if (!scripts.length)
-    return (
-      <div className="wrap centered muted">
-        No scripts found. Run the seed script.
-      </div>
-    );
-
   const bySlug = (slug: string) => scripts.find((s) => s.slug === slug);
 
   const finalSections: Section[] = sectionOrder
@@ -258,41 +225,27 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
 
   const includedCount = finalSections.length;
   const themesUsed = new Set(finalSections.map((s) => s.fromTheme)).size;
-
-  const makeDoc = () =>
-    buildPdf("Custom Event Script", finalSections);
-
   const filename = "toward-love-event-script.pdf";
+  const makeDoc = () => buildPdf("Custom Event Script", finalSections);
 
-  const onDownload = () => {
-    makeDoc().save(filename);
-  };
+  const onDownload = () => makeDoc().save(filename);
 
   const onEmail = async () => {
     setEmailState("Preparing…");
     try {
       const doc = makeDoc();
       const base64 = pdfBase64(doc);
-      const r = await sendPdf({
+      const r = await emailPdf(
         token,
         filename,
         base64,
-        note: `Your finalized toward.love script — ${includedCount} sections, drawn from ${themesUsed} of the 10 versions.`,
-      });
-      if (r.emailed) {
-        setEmailState("✓ Emailed to you. Check your inbox.");
-      } else if (r.reason === "email-not-configured") {
-        doc.save(filename);
-        setEmailState(
-          "Email isn't configured on this deployment yet, so the PDF was downloaded instead. (Set RESEND_API_KEY to enable emailing.)",
-        );
-      } else {
-        doc.save(filename);
-        setEmailState(`Couldn't email (${r.reason}). Downloaded the PDF instead.`);
-      }
+        `Your finalized toward.love script — ${includedCount} sections, drawn from ${themesUsed} of the 10 versions.`,
+      );
+      setEmailState(r.emailed ? `✓ Emailed to ${r.to || "you"}.` : "Sent.");
     } catch (e) {
+      makeDoc().save(filename);
       setEmailState(
-        "Something went wrong emailing. Use Download PDF instead. " +
+        "Couldn't email just now, so the PDF was downloaded instead. " +
           (e instanceof Error ? e.message : ""),
       );
     }
@@ -314,10 +267,7 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
             </button>
             <button
               className={"seg__btn" + (view === "browse" ? " seg__btn--on" : "")}
-              onClick={() => {
-                setView("browse");
-                if (!browseSlug) setBrowseSlug(scripts[0].slug);
-              }}
+              onClick={() => setView("browse")}
             >
               Read full scripts
             </button>
@@ -334,9 +284,9 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
             <div className="compose-intro">
               <h1>Build your final script</h1>
               <p className="muted">
-                For each of the 12 sections below, choose which of the 10 versions
-                you want. Click a version to select it; click its title to read it.
-                Your final script is assembled live on the right.
+                For each of the 12 sections, choose which of the 10 versions you
+                want. Click a version to select it; click the section row to expand
+                and read. Your final script is assembled live on the right.
               </p>
             </div>
 
@@ -381,10 +331,7 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
                                   name={"sec-" + sec.id}
                                   checked={on}
                                   onChange={() =>
-                                    setSelection((s) => ({
-                                      ...s,
-                                      [sec.id]: doc.slug,
-                                    }))
+                                    setSelection((s) => ({ ...s, [sec.id]: doc.slug }))
                                   }
                                 />
                                 <span className="variant__theme">{doc.theme}</span>
@@ -413,9 +360,7 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
                                 })
                               }
                             />
-                            <span className="variant__theme">
-                              Skip this section
-                            </span>
+                            <span className="variant__theme">Skip this section</span>
                           </label>
                         </div>
                       </div>
@@ -443,9 +388,7 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
                       className={!doc ? "finalbar__li finalbar__li--off" : "finalbar__li"}
                     >
                       <span className="finalbar__sec">{sec.title}</span>
-                      <span className="finalbar__from">
-                        {doc ? doc.theme : "skipped"}
-                      </span>
+                      <span className="finalbar__from">{doc ? doc.theme : "skipped"}</span>
                     </li>
                   );
                 })}
@@ -497,9 +440,7 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
             {scripts.map((doc) => (
               <button
                 key={doc.slug}
-                className={
-                  "browse__tab" + (browseSlug === doc.slug ? " browse__tab--on" : "")
-                }
+                className={"browse__tab" + (browseSlug === doc.slug ? " browse__tab--on" : "")}
                 onClick={() => setBrowseSlug(doc.slug)}
               >
                 {doc.theme}
@@ -516,9 +457,7 @@ function Studio({ token, onLogout }: { token: string; onLogout: () => void }) {
                   <section className="browse__sec" key={s.id}>
                     <h2>
                       {s.title}
-                      {s.duration ? (
-                        <span className="muted"> · {s.duration}</span>
-                      ) : null}
+                      {s.duration ? <span className="muted"> · {s.duration}</span> : null}
                     </h2>
                     <div className="md" dangerouslySetInnerHTML={md(s.markdown)} />
                   </section>

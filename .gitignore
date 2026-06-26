@@ -16,3 +16,4 @@ dist-ssr
 # Private: event scripts & derived content — never commit (repo is public)
 content/
 .env.scripts.local
+dist-studio
