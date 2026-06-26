@@ -18,7 +18,7 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 const REGION = process.env.AWS_REGION || "us-east-1";
 const TABLE = process.env.TABLE || "toward-love-scripts-auth";
 const ALLOWED_EMAIL = (process.env.ALLOWED_EMAIL || "hello@toward.love").toLowerCase();
-const FROM = process.env.FROM_EMAIL || "toward.love <no-reply@toward.love>";
+const FROM = process.env.FROM_EMAIL || "toward.love <hello@toward.love>";
 const PDF_TO = process.env.PDF_TO || "justynajanczyszyn@gmail.com";
 const SALT = process.env.SALT || "toward-love";
 const CODE_TTL = 15 * 60; // seconds
