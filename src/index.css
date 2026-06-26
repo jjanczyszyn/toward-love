@@ -384,12 +384,15 @@ body {
   margin: 0 0 14px;
 }
 .foot__invite a {
-  color: var(--accent);
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   text-decoration: none;
-  font-weight: 600;
 }
 .foot__invite a:hover {
-  text-decoration: underline;
+  filter: brightness(1.12);
 }
 .foot__meta {
   display: flex;
