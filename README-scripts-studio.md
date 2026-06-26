@@ -5,10 +5,10 @@ sections into one final script, and download or email it as a PDF.
 
 **Live:** https://script.toward.love (login by email code to `hello@toward.love`).
 
-## Architecture (all AWS, plus GitHub Pages for static hosting)
+## Architecture (all AWS)
 
 ```
-Browser ── https://script.toward.love (GitHub Pages: jjanczyszyn/toward-love-script)
+Browser ── https://script.toward.love (S3 + CloudFront + ACM TLS)
    │         static login gate + UI only — NO script content in the bundle
    │
    └── POST ─► API Gateway HTTP API ─► Lambda  (toward-love-scripts)
@@ -36,8 +36,14 @@ Browser ── https://script.toward.love (GitHub Pages: jjanczyszyn/toward-love
 | API Gateway HTTP API | `toward-love-scripts` → `https://y3jayphrrf.execute-api.us-east-1.amazonaws.com/` |
 | DynamoDB | `toward-love-scripts-auth` (PK `pk`, TTL `ttl`) |
 | IAM role | `toward-love-scripts-lambda` (SES send, DynamoDB RW, logs) |
-| DNS (Route53 `toward.love`) | `script.toward.love` CNAME → `jjanczyszyn.github.io` |
-| Static host | GitHub Pages repo `jjanczyszyn/toward-love-script` (CNAME `script.toward.love`) |
+| Static host | S3 `toward-love-script-site` (private) + CloudFront `E1CYBN1WGUVCHO` (`d44uhn5xf8780.cloudfront.net`) |
+| TLS | ACM cert for `script.toward.love` (us-east-1) |
+| DNS (Route53 `toward.love`) | `script.toward.love` A/AAAA alias → CloudFront; CAA permits Amazon |
+
+> Note: GitHub Pages was the first attempt but its custom-domain cert was unreliable,
+> and the `*.toward.love` wildcard CNAME made ACM CAA checks fail. Resolved by hosting
+> on S3+CloudFront with a dedicated ACM cert and a CAA record at `script.toward.love`.
+> The unused `jjanczyszyn/toward-love-script` Pages repo can be deleted.
 
 Lambda env: `ALLOWED_EMAIL=hello@toward.love`, `FROM_EMAIL=toward.love <no-reply@toward.love>`,
 `PDF_TO=justynajanczyszyn@gmail.com`, `TABLE`, `SALT`.
