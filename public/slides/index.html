@@ -56,6 +56,8 @@
         color: var(--muted); margin-bottom: 22px;
       }
       .q { font-size: clamp(28px, 5vw, 48px); line-height: 1.18; letter-spacing: -0.02em; margin: 0; }
+      .q--title { font-size: clamp(44px, 11vw, 104px); }
+      .subtitle { color: var(--muted); font-size: clamp(15px, 2.4vw, 20px); margin: 18px 0 0; }
       .agreements {
         list-style: none; padding: 0; margin: 26px auto 0; max-width: 640px; text-align: left;
         display: flex; flex-direction: column; gap: 14px; font-size: clamp(16px, 2.4vw, 20px);
@@ -152,8 +154,8 @@
         "What is a dream you have for your future that feels almost too big or scary to say out loud?",
       ];
 
-      // Slides: [0] agreements, [1..N] questions, [last] closing.
-      var TOTAL = QUESTIONS.length + 2;
+      // Slides: [0] title, [1] agreements, [2..N+1] questions, [last] closing.
+      var TOTAL = QUESTIONS.length + 3;
       var i = 0;
 
       var slide = document.getElementById("slide");
@@ -182,16 +184,21 @@
         if (i === 0) {
           slide.innerHTML =
             dots() +
+            '<h1 class="q q--title">toward<span class="grad">.love</span></h1>' +
+            '<p class="subtitle">A dating event &amp; community. Press Next to begin.</p>';
+        } else if (i === 1) {
+          slide.innerHTML =
+            dots() +
             '<div class="kicker">Before we begin</div>' +
             '<h1 class="q">Agreements</h1>' +
             '<ul class="agreements">' +
             AGREEMENTS.map(function (a) { return "<li>" + a + "</li>"; }).join("") +
             "</ul>";
-        } else if (i <= QUESTIONS.length) {
+        } else if (i <= QUESTIONS.length + 1) {
           slide.innerHTML =
             dots() +
-            '<div class="kicker">Prompt ' + i + " of " + QUESTIONS.length + "</div>" +
-            '<h1 class="q">' + QUESTIONS[i - 1] + "</h1>";
+            '<div class="kicker">Prompt ' + (i - 1) + " of " + QUESTIONS.length + "</div>" +
+            '<h1 class="q">' + QUESTIONS[i - 2] + "</h1>";
         } else {
           slide.innerHTML =
             dots() +
@@ -227,7 +234,7 @@
       document.addEventListener("fullscreenchange", function () {
         fs.textContent = document.fullscreenElement ? "↡ Exit" : "⛎ Fullscreen";
       });
-      shuffleBtn.addEventListener("click", function () { shuffle(); go(1); });
+      shuffleBtn.addEventListener("click", function () { shuffle(); go(2); });
 
       document.addEventListener("keydown", function (e) {
         if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); next.click(); }
