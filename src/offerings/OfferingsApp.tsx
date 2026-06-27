@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const CREATOR_URL = "https://justinalydia.com";
 const CONTACT_EMAIL = "hello@toward.love";
 const BOOKING_URL = "https://cal.com/justina-lydia/coaching-intro-call";
@@ -21,6 +23,10 @@ type Offering = {
   lede: string;
   body: string[];
   includes?: string[];
+  image: string;
+  imageAlt: string;
+  // object-position for the banner crop, tuned per photo so faces stay in frame.
+  imagePos?: string;
   ctaLabel: string;
   // Coaching starts with a discovery call (booking link); the cohort starts
   // with an application email. `ctaHref` decides which a card uses.
@@ -48,6 +54,9 @@ const OFFERINGS: Offering[] = [
       "Guided exercises between meetings, drawn from the 49 lessons",
       "A small circle for shared accountability and witness",
     ],
+    image: "/photos/session-hands.jpg",
+    imageAlt: "Two people sitting face to face, hands resting on each other's hearts",
+    imagePos: "center 28%",
     ctaLabel: "Apply for the mastermind",
     ctaHref: compose("Calling in the One mastermind"),
     featured: true,
@@ -63,6 +72,9 @@ const OFFERINGS: Offering[] = [
       "We work with the patterns that repeat, the fears that show up right as things get close, and the picture of partnership you have never let yourself fully want. The work draws on parts work, somatic tracking, and authentic relating, bringing your words, body, and parts back onto the same current so you can move toward what you want without working against yourself.",
       "I bring a steady nervous system into the room, read what is being said and unsaid, and stay with you until the wiring comes back into contact. This is for you if you want focused attention on your particular story, at your own pace, with someone in your corner between the milestones.",
     ],
+    image: "/photos/session-close.jpg",
+    imageAlt: "Justina holding a client in a calm, supported embrace",
+    imagePos: "center 30%",
     ctaLabel: "Book a discovery call",
     ctaHref: BOOKING_URL,
   },
@@ -78,6 +90,9 @@ const OFFERINGS: Offering[] = [
       "Arrive as you are. Together we move into a space of relaxation and embodied connection, paced gently to the energy in the room. You pick up simple, durable tools for the kind of communication that brings you back into intimacy, again and again. And together we plant a seed in the garden of your connection, one that keeps growing long after you leave the room.",
       "This is presence work, not therapy or crisis work. It is for couples who are basically solid and want to feel close again. If you are in acute crisis or considering separation, a licensed couples therapist will serve you better, and I will happily point you toward one.",
     ],
+    image: "/photos/couples.jpg",
+    imageAlt: "A couple sitting close on the floor, holding hands and laughing together",
+    imagePos: "center 30%",
     ctaLabel: "Reach out together",
     ctaHref: BOOKING_URL,
   },
@@ -93,17 +108,142 @@ const TESTIMONIALS = [
     by: "Amelie",
   },
   {
+    q: "Justina has a very compassionate way of approaching her clients. She is sensitive, careful, and heart-centred. She is well grounded in her own body, which lets the client's system calm down easier and faster. I am thankful for the session and recommend it.",
+    by: "Frederike",
+  },
+  {
+    q: "Justina helped me navigate interpersonal conflicts, find emotional clarity, and develop strategies for future social interactions. All in an atmosphere of empathy, respect, and connection. Highly recommend.",
+    by: "Krzysztof",
+  },
+  {
     q: "She helped me release emotional blocks I did not even realize were holding me back. She has this way of asking the right questions that make everything click, and she never pushes her own answers on you. One of the best decisions I have made.",
     by: "A client",
   },
 ];
 
-function OfferingCard({ o }: { o: Offering }) {
+// The guided experience: one question that routes a visitor to the offering
+// that best fits where they are right now.
+const GUIDE_PATHS = [
+  {
+    label: "I am single, and I want to call in a real partnership",
+    offeringId: "mastermind",
+    why: "Begin with the mastermind. We do the inner work that clears the ground first, so the love you are calling in has somewhere to take root.",
+  },
+  {
+    label: "I keep meeting the same pattern, and I want to understand myself",
+    offeringId: "individual",
+    why: "Begin one to one. We follow the pattern to its root and bring your words, body, and parts back onto the same current.",
+  },
+  {
+    label: "I am with someone, and I want us to feel close again",
+    offeringId: "couples",
+    why: "Begin together. We slow down and practice the presence that lets you feel the love that is already there.",
+  },
+];
+type GuidePath = (typeof GUIDE_PATHS)[number];
+
+function Guide({ onChoose }: { onChoose: (offeringId: string) => void }) {
+  const [step, setStep] = useState<"breath" | "ask" | "done">("breath");
+  const [picked, setPicked] = useState<GuidePath | null>(null);
+
+  const choose = (p: GuidePath) => {
+    setPicked(p);
+    setStep("done");
+    onChoose(p.offeringId);
+  };
+
+  return (
+    <section className="guide" aria-label="Find where to begin">
+      {step === "breath" && (
+        <div className="guide__panel">
+          <p className="guide__eyebrow">Before you begin</p>
+          <p className="guide__breath">
+            Let your eyes soften for a moment. Take one slow breath, all the way
+            down. Feel the weight of your body settle into the soles of your
+            feet, into the floor that is holding you. There is no rush here.
+          </p>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={() => setStep("ask")}
+          >
+            I am here
+          </button>
+        </div>
+      )}
+
+      {step === "ask" && (
+        <div className="guide__panel">
+          <p className="guide__eyebrow">A place to start</p>
+          <h2 className="guide__q">What is alive for you right now?</h2>
+          <div className="guide__options">
+            {GUIDE_PATHS.map((p) => (
+              <button
+                type="button"
+                key={p.offeringId}
+                className="guide__option"
+                onClick={() => choose(p)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {step === "done" && picked && (
+        <div className="guide__panel guide__panel--done">
+          <p className="guide__eyebrow">Where I would begin you</p>
+          <p className="guide__why">{picked.why}</p>
+          <div className="guide__doneRow">
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => onChoose(picked.offeringId)}
+            >
+              Take me there ↓
+            </button>
+            <button
+              type="button"
+              className="linklike"
+              onClick={() => setStep("ask")}
+            >
+              Ask me something else
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function OfferingCard({
+  o,
+  recommended,
+}: {
+  o: Offering;
+  recommended?: boolean;
+}) {
   return (
     <article
       id={o.id}
-      className={"offering" + (o.featured ? " offering--featured" : "")}
+      className={
+        "offering" +
+        (o.featured ? " offering--featured" : "") +
+        (recommended ? " offering--recommended" : "")
+      }
     >
+      <img
+        className="offering__img"
+        src={o.image}
+        alt={o.imageAlt}
+        loading="lazy"
+        decoding="async"
+        style={o.imagePos ? { objectPosition: o.imagePos } : undefined}
+      />
+      {recommended && (
+        <p className="offering__pick">Where I would begin you</p>
+      )}
       <p className="offering__kicker">{o.kicker}</p>
       <div className="offering__head">
         <h2 className="offering__title">{o.title}</h2>
@@ -137,6 +277,18 @@ function OfferingCard({ o }: { o: Offering }) {
 }
 
 export default function OfferingsApp() {
+  const [recommended, setRecommended] = useState<string | null>(null);
+
+  const goToOffering = (id: string) => {
+    setRecommended(id);
+    // Let the highlight class land, then bring the card into view.
+    window.requestAnimationFrame(() => {
+      document
+        .getElementById(id)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   return (
     <main className="wrap">
       <header className="hero hero--offerings">
@@ -180,17 +332,34 @@ export default function OfferingsApp() {
         </div>
       </section>
 
-      <p className="offerings__note">
-        I am Justina, a coherence coach and a relationship coach: to yourself,
-        to the other, to the world. My work brings your words, body, and parts
-        back onto the same current, drawing on authentic relating, parts work,
-        somatic tracking, and breathwork. Clarity in the head, held with real
-        fluency for the heart underneath it.
-      </p>
+      <section className="about" aria-label="About Justina">
+        <img
+          className="about__photo"
+          src="/photos/justina-portrait.jpg"
+          alt="Justina, smiling, seated in a velvet chair"
+          width={764}
+          height={1000}
+          loading="lazy"
+          decoding="async"
+        />
+        <p className="about__note">
+          I am Justina, a coherence coach and a relationship coach: to yourself,
+          to the other, to the world. My work brings your words, body, and parts
+          back onto the same current, drawing on authentic relating, parts work,
+          somatic tracking, and breathwork. Clarity in the head, held with real
+          fluency for the heart underneath it.
+        </p>
+      </section>
+
+      <Guide onChoose={goToOffering} />
 
       <section className="offerings" aria-label="Offerings">
         {OFFERINGS.map((o) => (
-          <OfferingCard key={o.id} o={o} />
+          <OfferingCard
+            key={o.id}
+            o={o}
+            recommended={recommended === o.id}
+          />
         ))}
       </section>
 

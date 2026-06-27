@@ -69,13 +69,36 @@
   }
 }
 
-.offerings__note {
+/* About row: portrait + the coach's note */
+.about {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 24px;
+  align-items: center;
   max-width: 680px;
   margin: 0 auto 40px;
-  text-align: center;
+}
+.about__photo {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center 18%;
+  border: 1px solid var(--card-border);
+}
+.about__note {
+  margin: 0;
   color: var(--muted);
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.62;
+}
+@media (max-width: 560px) {
+  .about {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: 18px;
+  }
 }
 
 /* Offering cards */
@@ -91,6 +114,24 @@
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   padding: 28px 26px 30px;
+  overflow: hidden;
+}
+/* Banner photo bleeds to the card edges, above the padded content. */
+.offering__img {
+  display: block;
+  width: calc(100% + 52px);
+  margin: -28px -26px 22px;
+  height: 220px;
+  object-fit: cover;
+  object-position: center 30%;
+}
+.offering--featured .offering__img {
+  height: 250px;
+}
+@media (max-width: 560px) {
+  .offering__img {
+    height: 180px;
+  }
 }
 .offering--featured {
   border-color: var(--accent-2);
@@ -222,4 +263,96 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+/* Guided experience: somatic arrival + the question that routes you */
+.guide {
+  max-width: 680px;
+  margin: 0 auto 40px;
+}
+.guide__panel {
+  background:
+    radial-gradient(600px 220px at 50% 0%, rgba(177, 92, 255, 0.1), transparent 70%),
+    var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  text-align: center;
+}
+.guide__eyebrow {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+.guide__breath {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--text);
+  max-width: 520px;
+  margin: 0 auto 24px;
+}
+.guide__q {
+  font-size: clamp(22px, 4vw, 27px);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 0 0 22px;
+}
+.guide__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+.guide__option {
+  background: var(--chip);
+  border: 1px solid var(--chip-border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 16px 18px;
+  font-size: 15.5px;
+  line-height: 1.45;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.06s ease;
+}
+.guide__option:hover {
+  border-color: var(--accent-2);
+  background: #251f30;
+}
+.guide__option:active {
+  transform: translateY(1px);
+}
+.guide__why {
+  font-size: 17.5px;
+  line-height: 1.6;
+  color: var(--text);
+  max-width: 540px;
+  margin: 0 auto 24px;
+}
+.guide__doneRow {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* The card the guide points you to */
+.offering--recommended {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 30px 84px -34px rgba(229, 85, 122, 0.6);
+}
+.offering__pick {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
