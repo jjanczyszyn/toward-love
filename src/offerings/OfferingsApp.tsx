@@ -20,13 +20,13 @@ type Offering = {
   kicker: string;
   title: string;
   price?: string;
+  // One clickable sentence used when this offering is shown as another way in.
+  teaser: string;
   lede: string;
   body: string[];
   includes?: string[];
-  image: string;
-  imageAlt: string;
-  // object-position for the banner crop, tuned per photo so faces stay in frame.
-  imagePos?: string;
+  image?: string;
+  imageAlt?: string;
   ctaLabel: string;
   // Coaching starts with a discovery call (booking link); the cohort starts
   // with an application email. `ctaHref` decides which a card uses.
@@ -40,6 +40,7 @@ const OFFERINGS: Offering[] = [
     kicker: "Group mastermind · Calling in the One",
     title: "Become the person your person is looking for",
     price: "$70 / month",
+    teaser: "Single, and calling in a real partnership? Do the inner work together.",
     lede:
       "A small group moving through Katherine Woodward Thomas's Calling in the One together. Forty nine lessons of inner work, held at a pace that lets each one actually land.",
     body: [
@@ -54,9 +55,6 @@ const OFFERINGS: Offering[] = [
       "Guided exercises between meetings, drawn from the 49 lessons",
       "A small circle for shared accountability and witness",
     ],
-    image: "/photos/session-hands.jpg",
-    imageAlt: "Two people sitting face to face, hands resting on each other's hearts",
-    imagePos: "center 28%",
     ctaLabel: "Apply for the mastermind",
     ctaHref: compose("Calling in the One mastermind"),
     featured: true,
@@ -66,15 +64,13 @@ const OFFERINGS: Offering[] = [
     kicker: "1:1 coaching",
     title: "Individual coaching",
     price: "$150 / session",
+    teaser: "Meeting the same pattern again and again? Go to the root, one to one.",
     lede:
       "Private work for the moments your system shorts out, where words say one thing and the body says another, and the same loop keeps running with a new face each time.",
     body: [
       "We work with the patterns that repeat, the fears that show up right as things get close, and the picture of partnership you have never let yourself fully want. The work draws on parts work, somatic tracking, and authentic relating, bringing your words, body, and parts back onto the same current so you can move toward what you want without working against yourself.",
       "I bring a steady nervous system into the room, read what is being said and unsaid, and stay with you until the wiring comes back into contact. This is for you if you want focused attention on your particular story, at your own pace, with someone in your corner between the milestones.",
     ],
-    image: "/photos/session-close.jpg",
-    imageAlt: "Justina holding a client in a calm, supported embrace",
-    imagePos: "center 30%",
     ctaLabel: "Book a discovery call",
     ctaHref: BOOKING_URL,
   },
@@ -83,6 +79,7 @@ const OFFERINGS: Offering[] = [
     kicker: "For two · The art of turning toward each other",
     title: "Couples coaching",
     price: "$175 / session",
+    teaser: "With someone, and longing to feel close again? Turn toward each other.",
     lede:
       "You already love each other. This is about being present enough to feel it.",
     body: [
@@ -92,7 +89,6 @@ const OFFERINGS: Offering[] = [
     ],
     image: "/photos/couples.jpg",
     imageAlt: "A couple sitting close on the floor, holding hands and laughing together",
-    imagePos: "center 30%",
     ctaLabel: "Reach out together",
     ctaHref: BOOKING_URL,
   },
@@ -142,19 +138,12 @@ const GUIDE_PATHS = [
 ];
 type GuidePath = (typeof GUIDE_PATHS)[number];
 
-function Guide({ onChoose }: { onChoose: (offeringId: string) => void }) {
-  const [step, setStep] = useState<"breath" | "ask" | "done">("breath");
-  const [picked, setPicked] = useState<GuidePath | null>(null);
-
-  const choose = (p: GuidePath) => {
-    setPicked(p);
-    setStep("done");
-    onChoose(p.offeringId);
-  };
+function Guide({ onChoose }: { onChoose: (p: GuidePath) => void }) {
+  const [step, setStep] = useState<"breath" | "ask">("breath");
 
   return (
     <section className="guide" aria-label="Find where to begin">
-      {step === "breath" && (
+      {step === "breath" ? (
         <div className="guide__panel">
           <p className="guide__eyebrow">Before you begin</p>
           <p className="guide__breath">
@@ -170,9 +159,7 @@ function Guide({ onChoose }: { onChoose: (offeringId: string) => void }) {
             I am here
           </button>
         </div>
-      )}
-
-      {step === "ask" && (
+      ) : (
         <div className="guide__panel">
           <p className="guide__eyebrow">A place to start</p>
           <h2 className="guide__q">What is alive for you right now?</h2>
@@ -182,7 +169,7 @@ function Guide({ onChoose }: { onChoose: (offeringId: string) => void }) {
                 type="button"
                 key={p.offeringId}
                 className="guide__option"
-                onClick={() => choose(p)}
+                onClick={() => onChoose(p)}
               >
                 {p.label}
               </button>
@@ -190,59 +177,24 @@ function Guide({ onChoose }: { onChoose: (offeringId: string) => void }) {
           </div>
         </div>
       )}
-
-      {step === "done" && picked && (
-        <div className="guide__panel guide__panel--done">
-          <p className="guide__eyebrow">Where I would begin you</p>
-          <p className="guide__why">{picked.why}</p>
-          <div className="guide__doneRow">
-            <button
-              type="button"
-              className="btn btn--primary"
-              onClick={() => onChoose(picked.offeringId)}
-            >
-              Take me there ↓
-            </button>
-            <button
-              type="button"
-              className="linklike"
-              onClick={() => setStep("ask")}
-            >
-              Ask me something else
-            </button>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
 
-function OfferingCard({
-  o,
-  recommended,
-}: {
-  o: Offering;
-  recommended?: boolean;
-}) {
+function OfferingCard({ o }: { o: Offering }) {
   return (
     <article
       id={o.id}
-      className={
-        "offering" +
-        (o.featured ? " offering--featured" : "") +
-        (recommended ? " offering--recommended" : "")
-      }
+      className={"offering" + (o.featured ? " offering--featured" : "")}
     >
-      <img
-        className="offering__img"
-        src={o.image}
-        alt={o.imageAlt}
-        loading="lazy"
-        decoding="async"
-        style={o.imagePos ? { objectPosition: o.imagePos } : undefined}
-      />
-      {recommended && (
-        <p className="offering__pick">Where I would begin you</p>
+      {o.image && (
+        <img
+          className="offering__img"
+          src={o.image}
+          alt={o.imageAlt}
+          loading="lazy"
+          decoding="async"
+        />
       )}
       <p className="offering__kicker">{o.kicker}</p>
       <div className="offering__head">
@@ -263,9 +215,7 @@ function OfferingCard({
         </ul>
       )}
       <a
-        className={
-          "btn " + (o.featured ? "btn--primary" : "btn--ghost")
-        }
+        className={"btn " + (o.featured ? "btn--primary" : "btn--ghost")}
         href={o.ctaHref}
         target="_blank"
         rel="noreferrer"
@@ -276,91 +226,52 @@ function OfferingCard({
   );
 }
 
-export default function OfferingsApp() {
-  const [recommended, setRecommended] = useState<string | null>(null);
-
-  const goToOffering = (id: string) => {
-    setRecommended(id);
-    // Let the highlight class land, then bring the card into view.
-    window.requestAnimationFrame(() => {
-      document
-        .getElementById(id)
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  };
-
+function OfferingView(props: {
+  offering: Offering;
+  why: string | null;
+  others: Offering[];
+  onSelect: (id: string) => void;
+  onRestart: () => void;
+}) {
+  const { offering, why, others, onSelect, onRestart } = props;
   return (
-    <main className="wrap">
-      <header className="hero hero--offerings">
-        <a className="mark mark--link" href="/">
-          toward<span>.love</span>
-          <sup className="mark__sm">℠</sup>
-        </a>
-        <p className="offerings__eyebrow">Coaching &amp; the inner work</p>
-        <h1>The work that lets love bloom.</h1>
-        <p className="lede">
-          Most people wait for the right person to arrive. The quieter truth is
-          that who shows up, and whether you can recognize and hold them when
-          they do, depends on who you have become by the time they get here.
-          These offerings are about that becoming.
-        </p>
-      </header>
+    <>
+      <div className="result">
+        <button type="button" className="result__back" onClick={onRestart}>
+          ← Begin again
+        </button>
+        {why ? (
+          <>
+            <p className="result__eyebrow">Where I would begin you</p>
+            <p className="result__why">{why}</p>
+          </>
+        ) : (
+          <p className="result__eyebrow">Here is the work</p>
+        )}
+      </div>
 
-      <section className="arc" aria-label="The arc of the work">
-        <div className="arc__col">
-          <h2 className="arc__label">How you arrive</h2>
-          <p className="arc__story">
-            Tired of dating that goes nowhere. Carrying the ache of wanting
-            something you cannot seem to make happen, and a small fear that the
-            problem might be you. You have read the books and tried to think
-            your way through it, yet the same pattern keeps finding you with a
-            new face each time.
-          </p>
-        </div>
-        <div className="arc__bridge" aria-hidden="true">
-          <span>→</span>
-        </div>
-        <div className="arc__col">
-          <h2 className="arc__label">How you leave</h2>
-          <p className="arc__story">
-            Clear about the life you are actually building toward. Able to feel
-            a person who is good for you in your body, not just name the ones
-            who are not. Relating from a sense of enough rather than from
-            hunger. Still yourself, more at home in it, and far more available
-            to be found.
-          </p>
-        </div>
+      <section className="offerings offerings--single" aria-label="Your offering">
+        <OfferingCard o={offering} />
       </section>
 
-      <section className="about" aria-label="About Justina">
-        <img
-          className="about__photo"
-          src="/photos/justina-portrait.jpg"
-          alt="Justina, smiling, seated in a velvet chair"
-          width={764}
-          height={1000}
-          loading="lazy"
-          decoding="async"
-        />
-        <p className="about__note">
-          I am Justina, a coherence coach and a relationship coach: to yourself,
-          to the other, to the world. My work brings your words, body, and parts
-          back onto the same current, drawing on authentic relating, parts work,
-          somatic tracking, and breathwork. Clarity in the head, held with real
-          fluency for the heart underneath it.
-        </p>
-      </section>
-
-      <Guide onChoose={goToOffering} />
-
-      <section className="offerings" aria-label="Offerings">
-        {OFFERINGS.map((o) => (
-          <OfferingCard
-            key={o.id}
-            o={o}
-            recommended={recommended === o.id}
-          />
-        ))}
+      <section className="more" aria-label="Other ways to begin">
+        <p className="more__eyebrow">Or begin somewhere else</p>
+        <ul className="more__list">
+          {others.map((o) => (
+            <li key={o.id}>
+              <button
+                type="button"
+                className="more__item"
+                onClick={() => onSelect(o.id)}
+              >
+                <span className="more__sentence">{o.teaser}</span>
+                <span className="more__arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="quotes" aria-label="From clients">
@@ -374,18 +285,78 @@ export default function OfferingsApp() {
           ))}
         </div>
       </section>
+    </>
+  );
+}
+
+export default function OfferingsApp() {
+  // null selection = the guided experience stands alone; a selection reveals
+  // that one offering, with the others reachable by a clickable sentence.
+  const [selected, setSelected] = useState<string | null>(null);
+  const [guidePick, setGuidePick] = useState<GuidePath | null>(null);
+
+  const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  const chooseFromGuide = (p: GuidePath) => {
+    setGuidePick(p);
+    setSelected(p.offeringId);
+    toTop();
+  };
+  const selectOffering = (id: string) => {
+    setSelected(id);
+    toTop();
+  };
+  const restart = () => {
+    setSelected(null);
+    setGuidePick(null);
+    toTop();
+  };
+
+  const current = selected
+    ? OFFERINGS.find((o) => o.id === selected) ?? null
+    : null;
+  const others = current
+    ? OFFERINGS.filter((o) => o.id !== current.id)
+    : [];
+  const why =
+    current && guidePick && guidePick.offeringId === current.id
+      ? guidePick.why
+      : null;
+
+  return (
+    <main className={"wrap" + (current ? "" : " wrap--guide")}>
+      <header className="ohead">
+        <a className="mark mark--link" href="/">
+          toward<span>.love</span>
+          <sup className="mark__sm">℠</sup>
+        </a>
+      </header>
+
+      {current ? (
+        <OfferingView
+          offering={current}
+          why={why}
+          others={others}
+          onSelect={selectOffering}
+          onRestart={restart}
+        />
+      ) : (
+        <Guide onChoose={chooseFromGuide} />
+      )}
 
       <footer className="foot">
-        <p className="foot__invite">
-          Not sure which is right for you?{" "}
-          <a
-            href={compose("Which offering is right for me?")}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Email {CONTACT_EMAIL}
-          </a>
-        </p>
+        {current && (
+          <p className="foot__invite">
+            Not sure which is right for you?{" "}
+            <a
+              href={compose("Which offering is right for me?")}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Email {CONTACT_EMAIL}
+            </a>
+          </p>
+        )}
         <div className="foot__meta">
           <a href="/">toward.love</a>
           <span className="foot__sep">·</span>
