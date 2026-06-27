@@ -60,7 +60,7 @@ const OFFERINGS: Offering[] = [
     lede:
       "Private work for the moments your system shorts out, where words say one thing and the body says another, and the same loop keeps running with a new face each time.",
     body: [
-      "We work with the patterns that repeat, the fears that show up right as things get close, and the picture of partnership you have never let yourself fully want. The work draws on parts work, somatic tracking, and authentic relating, with an executive coach's clarity about where you are headed and the steps to get there.",
+      "We work with the patterns that repeat, the fears that show up right as things get close, and the picture of partnership you have never let yourself fully want. The work draws on parts work, somatic tracking, and authentic relating, bringing your words, body, and parts back onto the same current so you can move toward what you want without working against yourself.",
       "I bring a steady nervous system into the room, read what is being said and unsaid, and stay with you until the wiring comes back into contact. This is for you if you want focused attention on your particular story, at your own pace, with someone in your corner between the milestones.",
     ],
     ctaLabel: "Book a discovery call",
@@ -181,10 +181,11 @@ export default function OfferingsApp() {
       </section>
 
       <p className="offerings__note">
-        I am Justina. I work as an executive coach and a Calling in the One
-        coach, drawing on authentic relating, parts work, somatic tracking, and
-        breathwork. That means clarity about what you want and the steps to get
-        there, held with real fluency for the heart underneath it.
+        I am Justina, a coherence coach and a relationship coach: to yourself,
+        to the other, to the world. My work brings your words, body, and parts
+        back onto the same current, drawing on authentic relating, parts work,
+        somatic tracking, and breathwork. Clarity in the head, held with real
+        fluency for the heart underneath it.
       </p>
 
       <section className="offerings" aria-label="Offerings">
