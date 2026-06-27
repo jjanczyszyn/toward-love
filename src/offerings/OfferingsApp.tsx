@@ -181,10 +181,10 @@ export default function OfferingsApp() {
       </section>
 
       <p className="offerings__note">
-        I work as an executive coach and a Calling in the One coach, drawing on
-        authentic relating, parts work, somatic tracking, and breathwork. That
-        means clarity about what you want and the steps to get there, held with
-        real fluency for the heart underneath it.
+        I am Justina. I work as an executive coach and a Calling in the One
+        coach, drawing on authentic relating, parts work, somatic tracking, and
+        breathwork. That means clarity about what you want and the steps to get
+        there, held with real fluency for the heart underneath it.
       </p>
 
       <section className="offerings" aria-label="Offerings">
