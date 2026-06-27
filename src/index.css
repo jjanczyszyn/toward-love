@@ -219,6 +219,22 @@ body {
   flex-wrap: wrap;
 }
 
+.hero__links {
+  margin: 0;
+}
+.hero__links a {
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero__links a:hover {
+  filter: brightness(1.12);
+}
+
 /* Buttons */
 .btn {
   display: inline-block;

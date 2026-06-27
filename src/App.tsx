@@ -578,6 +578,9 @@ export default function App() {
           A space for people serious about a lasting partnership, in an
           environment designed so real connection has a chance to bloom.
         </p>
+        <p className="hero__links">
+          <a href="/offerings">Coaching &amp; the inner work →</a>
+        </p>
       </header>
 
       <div className="split">
