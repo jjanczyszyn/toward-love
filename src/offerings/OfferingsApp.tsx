@@ -113,7 +113,7 @@ const TESTIMONIALS = [
   },
   {
     q: "She helped me release emotional blocks I did not even realize were holding me back. She has this way of asking the right questions that make everything click, and she never pushes her own answers on you. One of the best decisions I have made.",
-    by: "A client",
+    by: "Michal",
   },
 ];
 
