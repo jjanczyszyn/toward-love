@@ -12,6 +12,11 @@ export default defineConfig({
       input: {
         main: "index.html",
         offerings: "offerings/index.html",
+        // Deep links: each offering has a static entry so /offerings/<slug>
+        // resolves on GitHub Pages; the app reads the path to open it.
+        mastermind: "offerings/calling-in-the-one-mastermind/index.html",
+        individual: "offerings/individual-coaching/index.html",
+        couples: "offerings/couples-coaching/index.html",
       },
     },
   },

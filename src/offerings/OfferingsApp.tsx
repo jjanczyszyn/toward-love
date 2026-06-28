@@ -17,6 +17,8 @@ function compose(subject: string): string {
 
 type Offering = {
   id: string;
+  // URL slug for the deep link at /offerings/<slug> (a static entry exists per slug).
+  slug: string;
   kicker: string;
   title: string;
   price?: string;
@@ -37,6 +39,7 @@ type Offering = {
 const OFFERINGS: Offering[] = [
   {
     id: "mastermind",
+    slug: "calling-in-the-one-mastermind",
     kicker: "Group mastermind · Calling in the One",
     title: "Become the person your person is looking for",
     price: "$70 / month",
@@ -53,7 +56,9 @@ const OFFERINGS: Offering[] = [
       "Paired with a support buddy for the whole season",
       "Two live group calls each month",
       "Guided exercises between meetings, drawn from the 49 lessons",
+      "A shared WhatsApp group, so the thread between us stays warm between calls",
       "A small circle for shared accountability and witness",
+      "A reply from me within 24 hours whenever you reach out",
     ],
     ctaLabel: "Apply for the mastermind",
     ctaHref: compose("Calling in the One mastermind"),
@@ -61,6 +66,7 @@ const OFFERINGS: Offering[] = [
   },
   {
     id: "individual",
+    slug: "individual-coaching",
     kicker: "1:1 coaching",
     title: "Individual coaching",
     price: "$150 / session",
@@ -76,6 +82,7 @@ const OFFERINGS: Offering[] = [
   },
   {
     id: "couples",
+    slug: "couples-coaching",
     kicker: "For two · The art of turning toward each other",
     title: "Couples coaching",
     price: "$175 / session",
@@ -289,10 +296,26 @@ function OfferingView(props: {
   );
 }
 
+// Match the last path segment against an offering slug, so a visitor landing
+// on /offerings/<slug> opens that offering directly and skips the guide.
+function offeringIdFromPath(): string | null {
+  const seg =
+    window.location.pathname.replace(/\/+$/, "").split("/").pop() ?? "";
+  return OFFERINGS.find((o) => o.slug === seg)?.id ?? null;
+}
+
+// Keep the address bar in step with what is shown, so any offering is a
+// shareable link. Each slug has a matching static entry, so reloads resolve.
+function syncUrl(id: string | null) {
+  const o = id ? OFFERINGS.find((x) => x.id === id) : null;
+  const path = o ? `/offerings/${o.slug}` : "/offerings";
+  window.history.replaceState(null, "", path);
+}
+
 export default function OfferingsApp() {
   // null selection = the guided experience stands alone; a selection reveals
   // that one offering, with the others reachable by a clickable sentence.
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(offeringIdFromPath);
   const [guidePick, setGuidePick] = useState<GuidePath | null>(null);
 
   const toTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
@@ -300,15 +323,18 @@ export default function OfferingsApp() {
   const chooseFromGuide = (p: GuidePath) => {
     setGuidePick(p);
     setSelected(p.offeringId);
+    syncUrl(p.offeringId);
     toTop();
   };
   const selectOffering = (id: string) => {
     setSelected(id);
+    syncUrl(id);
     toTop();
   };
   const restart = () => {
     setSelected(null);
     setGuidePick(null);
+    syncUrl(null);
     toTop();
   };
 
